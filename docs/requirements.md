@@ -80,8 +80,8 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 
 The first Newsweave candidate report identified these feeds for human review:
 
-- Activated: Ben's Bites (feed 1), Ed Zitron's Where's Your Ed At (feed 168), ByteByteGo Newsletter (feed 228), and Daniel Miessler (feed 179).
-- Remaining candidates to review: Latent Space: The AI Engineer Podcast, Simon Willison's Weblog, and Hamel's Blog.
+- Activated: Ben's Bites (feed 1), The Pragmatic Engineer newsletter (feed 230), ByteByteGo Newsletter (feed 228), and Daniel Miessler (feed 179).
+- Remaining candidates to review: Ed Zitron's Where's Your Ed At, Latent Space: The AI Engineer Podcast, Simon Willison's Weblog, and Hamel's Blog.
 
 Candidate detection is advisory and does not automatically change feed
 behaviour; the four feeds above were explicitly activated.
