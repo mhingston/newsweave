@@ -43,12 +43,25 @@ TIMEZONE=Europe/London
 PUBLICATION_TIME=06:00
 RETENTION_DAYS=7
 FABRIC_BIN=fabric
-FANOUT_FEED_TITLES=Ben's Bites
+FANOUT_FEED_IDS=1,230,228,179
 ```
 
 `FANOUT_FEED_IDS` and `FANOUT_FEED_TITLES` are comma-separated. Feed titles
 are matched case-insensitively. Configure a feed as fan-out only after checking
 the candidate report; ordinary feed entries remain first-class items.
+
+## Curation
+
+Newsweave processes every eligible item, then groups related coverage before
+selecting what appears in the email. Selection is ranked by the story-group
+score, capped at 50 story groups per edition, and capped at 5 selected groups
+per feed. Items reviewed but suppressed are recorded as excluded from that
+digest and remain available for the 7-day retention period.
+
+The ranking policy and safe adjustment points are documented in
+[`docs/curation-policy.md`](docs/curation-policy.md). Preference learning from
+email opens or clicks is intentionally deferred; Miniflux feed selection is
+the current explicit preference signal.
 
 ## Scheduling
 

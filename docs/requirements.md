@@ -44,6 +44,7 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 - The email includes up to 50 selected story groups, with a ranked Top Stories section first.
 - No more than 5 selected story groups may come from the same feed.
 - Selection happens after summarisation and grouping; low-ranked groups are suppressed from the email but remain retained until normal retention cleanup.
+- The initial ranking policy is documented in `docs/curation-policy.md`; it is intentionally deterministic at the selection stage and does not use email engagement signals.
 - Related items are rendered as one combined story with a headline, summary, key points, and supporting links.
 - The AI configuration targets an OpenAI-compatible text API using `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL`.
 - YouTube processing is extraction-first: Fabric/yt-dlp retrieves transcript and metadata, and the text model summarises the resulting text. The AI model does not generate or analyse video directly.
