@@ -16,8 +16,9 @@ function renderStory(story: RenderableStory): string {
 }
 
 export function renderDigest(date: string, stories: RenderableStory[]): string {
-  const top = stories.slice(0, Math.min(10, stories.length));
-  const remaining = stories.slice(top.length).filter((story) => story.kind === "rss");
+  const rss = stories.filter((story) => story.kind === "rss");
+  const top = rss.slice(0, 10);
+  const remaining = rss.slice(top.length);
   const fanout = stories.filter((story) => story.kind === "fanout");
   const section = (title: string, values: RenderableStory[]) => values.length ? `<h2>${title}</h2>${values.map(renderStory).join("\n")}` : "";
   return `<!doctype html><html><body><h1>Newsweave Daily — ${escapeHtml(date)}</h1>${section("Top Stories", top)}${section("More Coverage", remaining)}${section("Fan-out Discoveries", fanout)}</body></html>`;

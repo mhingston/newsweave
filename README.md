@@ -3,7 +3,8 @@
 Newsweave turns a Miniflux collection into one curated daily email. It polls
 Miniflux hourly, expands configured digest feeds into child links, fetches
 content through Fabric-supported extractors, summarises items with one text
-model request, groups related coverage, and sends the result through Resend.
+model request, groups related coverage, selects at most 50 stories with no more
+than 5 stories from one feed, and sends the result through Resend.
 
 The project is intentionally separate from PNIP and uses its own PostgreSQL
 database (`newsweave`).

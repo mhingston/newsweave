@@ -4,6 +4,8 @@ import { parseChatCompletionContent } from "./ai-response.js";
 
 export interface CuratableItem {
   id: string;
+  feedId: string;
+  feedTitle?: string;
   title: string;
   url: string;
   kind: "rss" | "fanout";

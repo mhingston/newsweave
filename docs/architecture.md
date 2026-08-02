@@ -14,7 +14,9 @@ RSS entries ── configured fan-out feeds ──► child links
                           ▼
              one text-model summary per item
                           ▼
-           deterministic dedup + AI story grouping
+             deterministic dedup + AI story grouping
+                          ▼
+          ranked selection (max 50, max 5 per feed)
                           ▼
                     daily email via Resend
 ```

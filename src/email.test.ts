@@ -8,7 +8,7 @@ const story = (kind: "rss" | "fanout"): RenderableStory => ({
   keyPoints: ["One", "Two", "Three"],
   score: 1,
   kind,
-  items: [{ id: "1", title: "Source title", url: "https://example.com/story", kind, summary: { summary: "A summary", keyPoints: ["One", "Two", "Three"], relevance: 1, novelty: 1 } }],
+  items: [{ id: "1", feedId: "feed-1", title: "Source title", url: "https://example.com/story", kind, summary: { summary: "A summary", keyPoints: ["One", "Two", "Three"], relevance: 1, novelty: 1 } }],
 });
 
 describe("renderDigest", () => {

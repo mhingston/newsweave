@@ -13,5 +13,6 @@ CREATE TABLE IF NOT EXISTS digests (
 CREATE TABLE IF NOT EXISTS digest_items (
   digest_id UUID NOT NULL REFERENCES digests(id) ON DELETE CASCADE,
   item_id UUID NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+  included BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (digest_id, item_id)
 );
