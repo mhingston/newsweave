@@ -9,8 +9,10 @@ function escapeHtml(value: string): string {
 
 function renderStory(story: RenderableStory): string {
   const points = story.keyPoints.map((point) => `<li>${escapeHtml(point)}</li>`).join("");
-  const links = story.items.map((item) => `<li><a href="${escapeHtml(item.url)}">${escapeHtml(item.title)}</a></li>`).join("");
-  return `<article><h3><a href="${escapeHtml(story.items[0]?.url ?? "#")}">${escapeHtml(story.headline)}</a></h3><p>${escapeHtml(story.summary)}</p><ul>${points}</ul><p><strong>Sources</strong></p><ul>${links}</ul></article>`;
+  const sources = story.kind === "fanout"
+    ? `<p><strong>Sources</strong></p><ul>${story.items.map((item) => `<li><a href="${escapeHtml(item.url)}">${escapeHtml(item.title)}</a></li>`).join("")}</ul>`
+    : "";
+  return `<article><h3><a href="${escapeHtml(story.items[0]?.url ?? "#")}">${escapeHtml(story.headline)}</a></h3><p>${escapeHtml(story.summary)}</p><ul>${points}</ul>${sources}</article>`;
 }
 
 export function renderDigest(date: string, stories: RenderableStory[]): string {
