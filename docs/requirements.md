@@ -41,7 +41,9 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 - Fan-out accepts HTTP/HTTPS article links while filtering obvious navigation, unsubscribe, social-profile, media-download, and tracking links.
 - Child items inherit the parent's feed/category metadata while also recording the child's actual publisher/domain.
 - Email ordering is top stories first, ordinary coverage second, and fan-out discoveries third.
-- The email includes all successfully summarised items, with a ranked Top Stories section first.
+- The email includes up to 50 selected story groups, with a ranked Top Stories section first.
+- No more than 5 selected story groups may come from the same feed.
+- Selection happens after summarisation and grouping; low-ranked groups are suppressed from the email but remain retained until normal retention cleanup.
 - Related items are rendered as one combined story with a headline, summary, key points, and supporting links.
 - The AI configuration targets an OpenAI-compatible text API using `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL`.
 - YouTube processing is extraction-first: Fabric/yt-dlp retrieves transcript and metadata, and the text model summarises the resulting text. The AI model does not generate or analyse video directly.
@@ -49,6 +51,7 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 - Support a single summarisation request for transcripts up to an approximately 1 million-token context window; do not add timestamp output.
 - The first release supports any URL that the configured Fabric extractor supports.
 - Email delivery uses Resend.
+- Preference learning is deferred. Miniflux feed selection is the primary explicit preference signal; Resend opens, clicks, and non-clicks are not used for ranking in the first curation release.
 - Operations provide a daily run summary and failure counts.
 - Fabric CLI is maintained through the official installer; it is now v1.4.467 (released 2026-07-31).
 - Build the replacement as a clean implementation in a new directory; leave PNIP intact during development and evaluation.
