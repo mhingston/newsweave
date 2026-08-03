@@ -6,8 +6,8 @@ curation small and explainable.
 ## Current pipeline
 
 1. Ingest and summarise all eligible items.
-2. Ask the text model to group items covering the same underlying event and
-   assign each group a score from 0 to 1.
+2. Ask the text model to summarise in English and group items covering the
+   same underlying event, assigning each group a score from 0 to 1.
 3. Sort groups by descending score, with the headline as a stable tie-breaker.
 4. Select at most 50 groups per edition.
 5. Select at most 5 groups from any one feed. A group containing multiple

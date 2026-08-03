@@ -36,7 +36,7 @@ export async function curate(config: Config, items: CuratableItem[]): Promise<St
         temperature: 0.1,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You are a careful news editor. Group only items covering the same specific underlying event. Keep unrelated items separate. Return JSON {groups:[{itemIds:string[],headline:string,summary:string,keyPoints:string[],score:number}]}. Every input ID must appear exactly once. Use only supplied facts." },
+          { role: "system", content: "You are a careful news editor. Group only items covering the same specific underlying event. Keep unrelated items separate. Write headlines, summaries, and keyPoints in English regardless of the source language. Preserve names, technical terms, and quoted wording accurately. Return JSON {groups:[{itemIds:string[],headline:string,summary:string,keyPoints:string[],score:number}]}. Every input ID must appear exactly once. Use only supplied facts." },
           { role: "user", content: JSON.stringify(items.map((item) => ({ id: item.id, title: item.title, url: item.url, summary: item.summary }))) },
         ],
       }),

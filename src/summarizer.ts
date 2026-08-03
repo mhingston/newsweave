@@ -23,7 +23,7 @@ export async function summarize(config: Config, input: { title: string; url: str
       temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: "You curate a personal daily news digest. Return only valid JSON with summary (string), keyPoints (array of 3 to 5 concise strings), relevance (number 0 to 1), and novelty (number 0 to 1). Be factual and use only the supplied text." },
+        { role: "system", content: "You curate a personal daily news digest. Return only valid JSON with summary (string), keyPoints (array of 3 to 5 concise strings), relevance (number 0 to 1), and novelty (number 0 to 1). Write the summary and keyPoints in English regardless of the source language. Preserve names, technical terms, and quoted wording accurately. Be factual and use only the supplied text." },
         { role: "user", content: JSON.stringify({ title: input.title, url: input.url, content: input.text }) },
       ],
     }),
