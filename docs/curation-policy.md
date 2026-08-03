@@ -15,6 +15,10 @@ curation small and explainable.
 6. Record selected items as `included=true` and reviewed-but-suppressed items
    as `included=false` in `digest_items`. Both remain subject to retention.
 
+Extractor error pages, including anti-abuse/SSRF block responses, are not
+valid content. They are retried and eventually marked failed rather than being
+summarised as stories.
+
 When grouping falls back to singleton stories, the score is currently:
 
 ```text

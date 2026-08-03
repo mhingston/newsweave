@@ -17,7 +17,19 @@ function runFile(file: string, args: string[], options: { timeout: number; maxBu
   });
 }
 
-function parseFabric(raw: string, fallbackTitle: string): ExtractedContent {
+export function isExtractorError(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (/AbuseAlleviationError|Anonymous access to .* blocked|SSRF security violation/i.test(trimmed)) return true;
+  try {
+    const parsed = JSON.parse(trimmed) as { code?: unknown; status?: unknown; name?: unknown; data?: unknown };
+    return parsed.data === null && (parsed.code === 403 || parsed.status === 403 || parsed.name === "AbuseAlleviationError");
+  } catch {
+    return false;
+  }
+}
+
+export function parseFabric(raw: string, fallbackTitle: string): ExtractedContent {
+  if (isExtractorError(raw)) throw new Error(`Fabric returned an extraction error: ${raw.trim().slice(0, 1000)}`);
   const marker = raw.indexOf("Markdown Content:");
   if (marker < 0) return { title: fallbackTitle, text: raw.trim(), source: "fabric" };
   const header = raw.slice(0, marker);

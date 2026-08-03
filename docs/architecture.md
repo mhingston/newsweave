@@ -10,7 +10,7 @@ RSS entries ── configured fan-out feeds ──► child links
                           ▼
              deterministic URL deduplication
                           ▼
-                 Fabric content extraction
+          Fabric extraction + error rejection
                           ▼
              one text-model summary per item
                           ▼
