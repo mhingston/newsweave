@@ -63,6 +63,9 @@ The ranking policy and safe adjustment points are documented in
 email opens or clicks is intentionally deferred; Miniflux feed selection is
 the current explicit preference signal.
 
+YouTube Shorts are excluded at ingestion and processing time. Standard
+YouTube videos remain supported through Fabric/yt-dlp extraction.
+
 ## Scheduling
 
 Use cron or systemd timers to run `newsweave ingest` and `newsweave process`

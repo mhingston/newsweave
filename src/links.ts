@@ -17,6 +17,16 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
+export function isYouTubeShort(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    return (host === "youtube.com" || host === "m.youtube.com" || host === "youtube-nocookie.com") && /^\/shorts(?:\/|$)/i.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export function normalizeUrl(value: string): string {
   const url = new URL(value.trim());
   url.hash = "";
@@ -30,6 +40,7 @@ export function normalizeUrl(value: string): string {
 
 export function isCandidateArticleLink(value: string, parentUrl?: string): boolean {
   if (!isHttpUrl(value)) return false;
+  if (isYouTubeShort(value)) return false;
   const url = new URL(value);
   const host = url.hostname.toLowerCase().replace(/^www\./, "");
   if (REJECTED_HOSTS.has(host) || host.endsWith(".facebook.com")) return false;

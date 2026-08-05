@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractLinks, normalizeUrl } from "./links.js";
+import { extractLinks, isYouTubeShort, normalizeUrl } from "./links.js";
 
 describe("link extraction", () => {
   it("extracts, absolutizes, normalizes, and deduplicates article links", () => {
@@ -20,5 +20,11 @@ describe("link extraction", () => {
     expect(normalizeUrl("https://example.com/story?a=1&utm_medium=email#x")).toBe(
       "https://example.com/story?a=1",
     );
+  });
+
+  it("recognises and filters YouTube Shorts", () => {
+    expect(isYouTubeShort("https://www.youtube.com/shorts/abc123")).toBe(true);
+    expect(isYouTubeShort("https://www.youtube.com/watch?v=abc123")).toBe(false);
+    expect(extractLinks('<a href="https://www.youtube.com/shorts/abc123">short</a>')).toEqual([]);
   });
 });

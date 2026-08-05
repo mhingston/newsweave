@@ -1,7 +1,7 @@
 import type { PoolClient } from "pg";
 import { parseStringSet, type Config } from "./config.js";
 import type { MinifluxEntry } from "./miniflux.js";
-import { extractLinks, normalizeUrl } from "./links.js";
+import { extractLinks, isYouTubeShort, normalizeUrl } from "./links.js";
 
 export interface IngestStats { entries: number; newEntries: number; items: number; childLinks: number; duplicates: number; }
 
@@ -26,7 +26,7 @@ export async function ingestEntries(client: PoolClient, entries: MinifluxEntry[]
       const sourceId = source.rows[0]?.id;
       if (!sourceId) { stats.duplicates++; await client.query("UPDATE ingestion_state SET last_entry_id=$1, updated_at=now() WHERE id=TRUE", [entry.id]); await client.query("COMMIT"); continue; }
       stats.newEntries++;
-      const links = fanout ? extractLinks(entry.contentHtml, entry.url) : [normalizeUrl(entry.url)];
+      const links = fanout ? extractLinks(entry.contentHtml, entry.url) : (isYouTubeShort(entry.url) ? [] : [normalizeUrl(entry.url)]);
       if (fanout) stats.childLinks += links.length;
       for (const url of links) {
         const kind = fanout ? "fanout" : "rss";
