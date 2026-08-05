@@ -49,6 +49,7 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 - The AI configuration targets an OpenAI-compatible text API using `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL`.
 - YouTube processing is extraction-first: Fabric/yt-dlp retrieves transcript and metadata, and the text model summarises the resulting text. The AI model does not generate or analyse video directly.
 - YouTube Shorts are excluded from ingestion/processing; standard YouTube videos remain eligible.
+- YouTube entries with missing/placeholder titles, bot-check pages, or metadata-only responses are excluded from publication.
 - If a YouTube transcript is unavailable, use the video title and description as the summarisation input.
 - Support a single summarisation request for transcripts up to an approximately 1 million-token context window; do not add timestamp output.
 - The first release supports any URL that the configured Fabric extractor supports.

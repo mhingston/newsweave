@@ -65,6 +65,8 @@ the current explicit preference signal.
 
 YouTube Shorts are excluded at ingestion and processing time. Standard
 YouTube videos remain supported through Fabric/yt-dlp extraction.
+Videos with missing placeholder titles, bot-check pages, or metadata-only
+responses are also excluded rather than summarised.
 
 ## Scheduling
 

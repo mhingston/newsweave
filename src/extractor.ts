@@ -28,6 +28,26 @@ export function isExtractorError(raw: string): boolean {
   }
 }
 
+function isPlaceholderVideoTitle(title: string): boolean {
+  return /^(?:[-–—]\s*)?youtube(?:\s+video)?$/i.test(title.trim());
+}
+
+export function isUnusableYouTubeContent(url: string, title: string, text: string): boolean {
+  if (!isYouTube(url)) return false;
+  if (isYouTubeShortUrl(url) || isPlaceholderVideoTitle(title)) return true;
+  return /AbuseAlleviationError|Anonymous access to .* blocked|SSRF security violation|bot check|confirm (?:you['’]re|you are) not a bot|verify (?:you['’]re|you are) not a bot|captcha|only metadata|metadata only|no video title|no transcript.*available|no article content/i.test(`${title}\n${text}`);
+}
+
+function isYouTubeShortUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    return (host === "youtube.com" || host === "m.youtube.com" || host === "youtube-nocookie.com") && /^\/shorts(?:\/|$)/i.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export function parseFabric(raw: string, fallbackTitle: string): ExtractedContent {
   if (isExtractorError(raw)) throw new Error(`Fabric returned an extraction error: ${raw.trim().slice(0, 1000)}`);
   const marker = raw.indexOf("Markdown Content:");
@@ -49,7 +69,7 @@ export async function extractContent(config: Config, input: { url: string; title
       maxBuffer: 20 * 1024 * 1024,
     });
     const parsed = parseFabric(result.stdout, input.title);
-    if (parsed.text.trim()) return parsed;
+    if (parsed.text.trim() && !isUnusableYouTubeContent(input.url, parsed.title, parsed.text)) return parsed;
   } catch (error) {
     if (!isYouTube(input.url)) throw error;
   }
@@ -60,9 +80,14 @@ export async function extractContent(config: Config, input: { url: string; title
       maxBuffer: 5 * 1024 * 1024,
     });
     const metadata = JSON.parse(result.stdout) as { title?: string; description?: string };
+    const title = metadata.title?.trim() || "";
+    const description = metadata.description?.trim() || "";
+    if (!title || isPlaceholderVideoTitle(title) || !description || isUnusableYouTubeContent(input.url, title, description) || description.length < 120) {
+      throw new Error("YouTube returned no usable title and substantive description");
+    }
     return {
-      title: metadata.title?.trim() || input.title,
-      text: [metadata.title, metadata.description].filter((value): value is string => Boolean(value?.trim())).join("\n\n"),
+      title,
+      text: [title, description].join("\n\n"),
       source: "youtube-metadata",
     };
   }
