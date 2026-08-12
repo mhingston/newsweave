@@ -19,6 +19,14 @@ describe("renderDigest", () => {
 
   it("keeps appended sources for fan-out stories", () => {
     const html = renderDigest("2026-08-02", [story("fanout")]);
+    expect(html).not.toContain("<strong>Sources</strong>");
+  });
+
+  it("shows only distinct fan-out sources", () => {
+    const value = story("fanout");
+    value.items.push({ ...value.items[0]!, id: "2", title: "Another source", url: "https://example.com/other" });
+    const html = renderDigest("2026-08-02", [value]);
     expect(html).toContain("<strong>Sources</strong>");
+    expect(html).toContain("Another source");
   });
 });

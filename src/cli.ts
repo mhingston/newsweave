@@ -10,7 +10,7 @@ import { findFanoutCandidates } from "./candidates.js";
 const command = process.argv[2] ?? "help";
 
 if (command === "help") {
-  console.log("newsweave ingest|fanout|process|publish|retention|doctor|metrics|candidates");
+  console.log("newsweave ingest|fanout|process|publish|retention|doctor|metrics|candidates|downvote <item-url-or-id>");
   process.exit(0);
 }
 
@@ -54,6 +54,15 @@ try {
     const statuses = await pool.query<{ status: string; count: string }>("SELECT status, count(*)::int AS count FROM items GROUP BY status ORDER BY status");
     const digest = await pool.query("SELECT digest_date, status, item_count, sent_at FROM digests ORDER BY digest_date DESC LIMIT 1");
     console.log(JSON.stringify({ command, items: Object.fromEntries(statuses.rows.map((row) => [row.status, Number(row.count)])), latestDigest: digest.rows[0] ?? null }, null, 2));
+  } else if (command === "downvote") {
+    const target = process.argv[3];
+    if (!target) throw new Error("usage: newsweave downvote <item-url-or-id>");
+    const item = await pool.query<{ id: string; title: string; url: string }>(
+      "SELECT id,title,url FROM items WHERE id::text=$1 OR url=$1 LIMIT 1", [target],
+    );
+    if (!item.rows[0]) throw new Error(`item not found: ${target}`);
+    await pool.query("INSERT INTO item_feedback (item_id,feedback_kind) VALUES ($1,'downvote') ON CONFLICT DO NOTHING", [item.rows[0].id]);
+    console.log(JSON.stringify({ command, feedback: "downvote", item: item.rows[0] }));
   } else {
     console.log(`Newsweave command '${command}' is not implemented yet.`);
   }

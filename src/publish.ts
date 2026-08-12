@@ -14,7 +14,7 @@ function localDate(timezone: string): string {
 export async function publish(pool: Pool, config: Config, date = localDate(config.TIMEZONE)): Promise<{ status: string; itemCount: number; digestDate: string }> {
   const existing = await pool.query("SELECT status, item_count FROM digests WHERE digest_date=$1", [date]);
   if (existing.rows[0]) return { status: String(existing.rows[0].status), itemCount: Number(existing.rows[0].item_count), digestDate: date };
-  const result = await pool.query(`SELECT i.id, i.title, i.url, i.kind, i.feed_id::text AS "feedId", i.feed_title AS "feedTitle", i.content_text, i.summary FROM items i WHERE i.status='summarized' AND NOT EXISTS (SELECT 1 FROM digest_items di WHERE di.item_id=i.id) ORDER BY i.created_at ASC`);
+  const result = await pool.query(`SELECT i.id, i.title, i.url, i.kind, i.feed_id::text AS "feedId", i.feed_title AS "feedTitle", i.content_text, i.summary FROM items i WHERE i.status='summarized' AND NOT EXISTS (SELECT 1 FROM digest_items di WHERE di.item_id=i.id) AND NOT EXISTS (SELECT 1 FROM item_feedback f WHERE f.item_id=i.id AND f.feedback_kind='downvote') ORDER BY i.created_at ASC`);
   const invalid = result.rows.filter((row) => isUnusableYouTubeContent(String(row.url), String(row.title), `${row.content_text ?? ""}\n${JSON.stringify(row.summary ?? {})}`));
   for (const row of invalid) await pool.query("UPDATE items SET status='failed', last_error=$2, updated_at=now() WHERE id=$1", [row.id, "Excluded: unusable YouTube content"]);
   const items = result.rows.filter((row) => !invalid.includes(row)).map((row) => ({ ...row, summary: row.summary as CuratableItem["summary"] })) as CuratableItem[];

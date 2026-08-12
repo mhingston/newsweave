@@ -55,6 +55,7 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 - The first release supports any URL that the configured Fabric extractor supports.
 - Email delivery uses Resend.
 - Preference learning is deferred. Miniflux feed selection is the primary explicit preference signal; Resend opens, clicks, and non-clicks are not used for ranking in the first curation release.
+- Explicit item downvotes are supported locally via the `downvote` command and exclude the item from future editions without rewriting sent digests.
 - Operations provide a daily run summary and failure counts.
 - Fabric CLI is maintained through the official installer; it is now v1.4.467 (released 2026-07-31).
 - Build the replacement as a clean implementation in a new directory; leave PNIP intact during development and evaluation.

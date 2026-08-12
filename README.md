@@ -22,6 +22,7 @@ newsweave retention    Delete items older than the retention window
 newsweave doctor       Check configuration and integrations
 newsweave candidates   Report likely digest/fan-out feeds for review
 newsweave metrics      Show item and latest-digest counts
+newsweave downvote URL  Mark an item as not interested for future editions
 ```
 
 ## Initial configuration
@@ -62,6 +63,14 @@ The ranking policy and safe adjustment points are documented in
 [`docs/curation-policy.md`](docs/curation-policy.md). Preference learning from
 email opens or clicks is intentionally deferred; Miniflux feed selection is
 the current explicit preference signal.
+
+To exclude a specific item from future editions, use its title URL:
+
+```sh
+npm start -- downvote https://example.com/story
+```
+
+Downvotes affect future editions only; they do not rewrite emails already sent.
 
 YouTube Shorts are excluded at ingestion and processing time. Standard
 YouTube videos remain supported through Fabric/yt-dlp extraction.

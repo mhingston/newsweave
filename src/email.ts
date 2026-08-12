@@ -1,5 +1,6 @@
 import type { StoryGroup } from "./curate.js";
 import type { CuratableItem } from "./curate.js";
+import { normalizeUrl } from "./links.js";
 
 export interface RenderableStory extends StoryGroup { kind: "rss" | "fanout"; items: CuratableItem[]; }
 
@@ -9,8 +10,14 @@ function escapeHtml(value: string): string {
 
 function renderStory(story: RenderableStory): string {
   const points = story.keyPoints.map((point) => `<li>${escapeHtml(point)}</li>`).join("");
-  const sources = story.kind === "fanout"
-    ? `<p><strong>Sources</strong></p><ul>${story.items.map((item) => `<li><a href="${escapeHtml(item.url)}">${escapeHtml(item.title)}</a></li>`).join("")}</ul>`
+  const titleUrl = story.items[0]?.url;
+  const sourceItems = story.kind === "fanout" && titleUrl
+    ? story.items.filter((item) => {
+      try { return normalizeUrl(item.url) !== normalizeUrl(titleUrl); } catch { return item.url !== titleUrl; }
+    })
+    : [];
+  const sources = sourceItems.length > 0
+    ? `<p><strong>Sources</strong></p><ul>${sourceItems.map((item) => `<li><a href="${escapeHtml(item.url)}">${escapeHtml(item.title)}</a></li>`).join("")}</ul>`
     : "";
   return `<article><h3><a href="${escapeHtml(story.items[0]?.url ?? "#")}">${escapeHtml(story.headline)}</a></h3><p>${escapeHtml(story.summary)}</p><ul>${points}</ul>${sources}</article>`;
 }
