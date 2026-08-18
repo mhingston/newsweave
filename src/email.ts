@@ -8,6 +8,15 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 }
 
+function summaryParagraphs(value: string): string[] {
+  const explicit = value.split(/\r?\n\s*\r?\n/).map((part) => part.trim()).filter(Boolean);
+  if (explicit.length > 1) return explicit;
+  const sentences = value.match(/[^.!?]+(?:[.!?]+|$)/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? [value.trim()];
+  if (sentences.length < 4) return [value.trim()];
+  const midpoint = Math.ceil(sentences.length / 2);
+  return [sentences.slice(0, midpoint).join(" "), sentences.slice(midpoint).join(" ")];
+}
+
 function renderStory(story: RenderableStory): string {
   const points = story.keyPoints.map((point) => `<li>${escapeHtml(point)}</li>`).join("");
   const titleUrl = story.items[0]?.url;
@@ -19,7 +28,8 @@ function renderStory(story: RenderableStory): string {
   const sources = sourceItems.length > 0
     ? `<p><strong>Sources</strong></p><ul>${sourceItems.map((item) => `<li><a href="${escapeHtml(item.url)}">${escapeHtml(item.title)}</a></li>`).join("")}</ul>`
     : "";
-  return `<article><h3><a href="${escapeHtml(story.items[0]?.url ?? "#")}">${escapeHtml(story.headline)}</a></h3><p>${escapeHtml(story.summary)}</p><ul>${points}</ul>${sources}</article>`;
+  const summary = summaryParagraphs(story.summary).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
+  return `<article><h3><a href="${escapeHtml(story.items[0]?.url ?? "#")}">${escapeHtml(story.headline)}</a></h3>${summary}<ul>${points}</ul>${sources}</article>`;
 }
 
 export function renderDigest(date: string, stories: RenderableStory[]): string {

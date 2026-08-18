@@ -29,4 +29,11 @@ describe("renderDigest", () => {
     expect(html).toContain("<strong>Sources</strong>");
     expect(html).toContain("Another source");
   });
+
+  it("renders substantial summaries as readable paragraphs", () => {
+    const value = story("rss");
+    value.summary = "First sentence. Second sentence. Third sentence. Fourth sentence.";
+    const html = renderDigest("2026-08-02", [value]);
+    expect(html.match(/<p>/g)).toHaveLength(2);
+  });
 });
