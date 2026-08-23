@@ -19,6 +19,10 @@ const schema = z.object({
   RETRY_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
   FANOUT_FEED_IDS: z.string().optional(),
   FANOUT_FEED_TITLES: z.string().optional(),
+  FANOUT_CANDIDATE_FEED_IDS: z.string().optional(),
+  FANOUT_CANDIDATE_FEED_TITLES: z.string().optional(),
+  FANOUT_MIN_LINKS: z.coerce.number().int().positive().default(5),
+  FANOUT_MIN_DOMAINS: z.coerce.number().int().positive().default(3),
 });
 
 export type Config = z.infer<typeof schema>;

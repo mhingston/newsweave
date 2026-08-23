@@ -5,9 +5,27 @@ import { extractLinks, isYouTubeShort, normalizeUrl } from "./links.js";
 
 export interface IngestStats { entries: number; newEntries: number; items: number; childLinks: number; duplicates: number; }
 
-function isFanout(entry: MinifluxEntry, config: Config): boolean {
-  return parseStringSet(config.FANOUT_FEED_IDS).has(String(entry.feedId)) ||
-    parseStringSet(config.FANOUT_FEED_TITLES).has(entry.feedTitle.trim().toLowerCase());
+export interface FanoutSource { feedId: number | string; feedTitle: string; }
+
+export function isConfiguredFanout(source: FanoutSource, config: Config): boolean {
+  return parseStringSet(config.FANOUT_FEED_IDS).has(String(source.feedId)) ||
+    parseStringSet(config.FANOUT_FEED_TITLES).has(source.feedTitle.trim().toLowerCase());
+}
+
+export function isCandidateFeed(source: FanoutSource, config: Config): boolean {
+  return parseStringSet(config.FANOUT_CANDIDATE_FEED_IDS).has(String(source.feedId)) ||
+    parseStringSet(config.FANOUT_CANDIDATE_FEED_TITLES).has(source.feedTitle.trim().toLowerCase());
+}
+
+export function qualifiesAsDigest(links: string[], config: Config): boolean {
+  if (links.length < config.FANOUT_MIN_LINKS) return false;
+  const domains = new Set(links.map((url) => new URL(url).hostname));
+  return domains.size >= config.FANOUT_MIN_DOMAINS;
+}
+
+export function resolveFanout(source: FanoutSource, links: string[], config: Config): boolean {
+  if (isConfiguredFanout(source, config)) return true;
+  return isCandidateFeed(source, config) && qualifiesAsDigest(links, config);
 }
 
 export async function ingestEntries(client: PoolClient, entries: MinifluxEntry[], config: Config): Promise<IngestStats> {
@@ -15,7 +33,8 @@ export async function ingestEntries(client: PoolClient, entries: MinifluxEntry[]
   for (const entry of entries) {
     await client.query("BEGIN");
     try {
-      const fanout = isFanout(entry, config);
+      const extracted = extractLinks(entry.contentHtml, entry.url);
+      const fanout = resolveFanout(entry, extracted, config);
       const source = await client.query<{ id: string }>(
         `INSERT INTO source_entries
           (miniflux_entry_id, feed_id, feed_title, category_title, title, url, content_html, published_at, is_fanout)
@@ -26,7 +45,7 @@ export async function ingestEntries(client: PoolClient, entries: MinifluxEntry[]
       const sourceId = source.rows[0]?.id;
       if (!sourceId) { stats.duplicates++; await client.query("UPDATE ingestion_state SET last_entry_id=$1, updated_at=now() WHERE id=TRUE", [entry.id]); await client.query("COMMIT"); continue; }
       stats.newEntries++;
-      const links = fanout ? extractLinks(entry.contentHtml, entry.url) : (isYouTubeShort(entry.url) ? [] : [normalizeUrl(entry.url)]);
+      const links = fanout ? extracted : (isYouTubeShort(entry.url) ? [] : [normalizeUrl(entry.url)]);
       if (fanout) stats.childLinks += links.length;
       for (const url of links) {
         const kind = fanout ? "fanout" : "rss";
@@ -57,19 +76,22 @@ export async function ingestEntries(client: PoolClient, entries: MinifluxEntry[]
   return stats;
 }
 
-export async function activateConfiguredFanout(client: PoolClient, config: Config): Promise<{ feeds: number; entries: number; childLinks: number; items: number }> {
-  const ids = parseStringSet(config.FANOUT_FEED_IDS);
-  const titles = parseStringSet(config.FANOUT_FEED_TITLES);
+export async function activateFanout(client: PoolClient, config: Config): Promise<{ feeds: number; entries: number; configuredEntries: number; heuristicEntries: number; childLinks: number; items: number }> {
   const result = await client.query<{ id: string; feed_id: string; feed_title: string; title: string; url: string; content_html: string }>(
     "SELECT id, feed_id, feed_title, title, url, content_html FROM source_entries WHERE is_fanout=FALSE",
   );
-  const stats = { feeds: new Set<string>(), entries: 0, childLinks: 0, items: 0 };
+  const stats = { feeds: new Set<string>(), entries: 0, configuredEntries: 0, heuristicEntries: 0, childLinks: 0, items: 0 };
   for (const entry of result.rows) {
-    if (!ids.has(String(entry.feed_id)) && !titles.has(entry.feed_title.trim().toLowerCase())) continue;
+    const source = { feedId: entry.feed_id, feedTitle: entry.feed_title };
+    const extracted = extractLinks(entry.content_html ?? "", entry.url);
+    const configured = isConfiguredFanout(source, config);
+    const heuristic = !configured && isCandidateFeed(source, config) && qualifiesAsDigest(extracted, config);
+    if (!configured && !heuristic) continue;
     stats.feeds.add(String(entry.feed_id));
-    const links = extractLinks(entry.content_html ?? "", entry.url);
+    const links = extracted;
     await client.query("UPDATE source_entries SET is_fanout=TRUE WHERE id=$1", [entry.id]);
     stats.entries++;
+    if (configured) stats.configuredEntries++; else stats.heuristicEntries++;
     stats.childLinks += links.length;
     for (const url of links) {
       const item = await client.query<{ id: string }>(

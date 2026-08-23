@@ -51,6 +51,14 @@ FANOUT_FEED_IDS=1,230,228,179
 are matched case-insensitively. Configure a feed as fan-out only after checking
 the candidate report; ordinary feed entries remain first-class items.
 
+Mixed feeds — digests some days, essays or announcements on others — can be
+listed in `FANOUT_CANDIDATE_FEED_IDS` / `FANOUT_CANDIDATE_FEED_TITLES`
+instead. Every entry from a candidate feed is tested individually and only
+becomes fan-out when it carries at least `FANOUT_MIN_LINKS` outbound article
+links (default 5) spanning at least `FANOUT_MIN_DOMAINS` distinct domains
+(default 3); everything else stays an ordinary item. Feeds on neither list are
+never expanded, so link-heavy but non-digest blogs remain safe.
+
 ## Curation
 
 Newsweave processes every eligible item, then groups related coverage before

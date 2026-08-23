@@ -1,7 +1,7 @@
 import { loadConfig } from "./config.js";
 import { createPool, migrate, withAdvisoryLock } from "./db.js";
 import { createMinifluxClient } from "./miniflux.js";
-import { activateConfiguredFanout, ingestEntries } from "./ingest.js";
+import { activateFanout, ingestEntries } from "./ingest.js";
 import { deleteExpired } from "./retention.js";
 import { processPending } from "./process.js";
 import { publish } from "./publish.js";
@@ -31,7 +31,7 @@ try {
     });
     console.log(JSON.stringify({ command, ...result }));
   } else if (command === "fanout") {
-    const result = await withAdvisoryLock(pool, "newsweave:fanout", async (client) => activateConfiguredFanout(client, config));
+    const result = await withAdvisoryLock(pool, "newsweave:fanout", async (client) => activateFanout(client, config));
     console.log(JSON.stringify({ command, ...result }));
   } else if (command === "retention") {
     const deleted = await withAdvisoryLock(pool, "newsweave:retention", async () => deleteExpired(pool, config.RETENTION_DAYS));
