@@ -36,4 +36,11 @@ describe("renderDigest", () => {
     const html = renderDigest("2026-08-02", [value]);
     expect(html.match(/<p>/g)).toHaveLength(2);
   });
+
+  it("splits oversized model paragraphs at sentence boundaries", () => {
+    const value = story("rss");
+    value.summary = Array.from({ length: 12 }, (_, index) => `Sentence ${index + 1} contains enough detail to make the rendered summary readable.`).join(" ");
+    const html = renderDigest("2026-08-02", [value]);
+    expect(html.match(/<p>/g)!.length).toBeGreaterThan(2);
+  });
 });

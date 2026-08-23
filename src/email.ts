@@ -10,11 +10,30 @@ function escapeHtml(value: string): string {
 
 function summaryParagraphs(value: string): string[] {
   const explicit = value.split(/\r?\n\s*\r?\n/).map((part) => part.trim()).filter(Boolean);
-  if (explicit.length > 1) return explicit;
-  const sentences = value.match(/[^.!?]+(?:[.!?]+|$)/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? [value.trim()];
-  if (sentences.length < 4) return [value.trim()];
-  const midpoint = Math.ceil(sentences.length / 2);
-  return [sentences.slice(0, midpoint).join(" "), sentences.slice(midpoint).join(" ")];
+  const sentencesFor = (part: string) => part.match(/[^.!?]+(?:[.!?]+|$)/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? [part.trim()];
+  const chunks: string[] = [];
+  for (const part of explicit.length > 1 ? explicit : [value.trim()]) {
+    const sentences = sentencesFor(part);
+    if (sentences.length <= 3 && part.length <= 700) {
+      chunks.push(part);
+      continue;
+    }
+    let current = "";
+    let sentenceCount = 0;
+    for (const sentence of sentences) {
+      const candidate = current ? `${current} ${sentence}` : sentence;
+      if (current && (candidate.length > 700 || sentenceCount >= 3)) {
+        chunks.push(current);
+        current = sentence;
+        sentenceCount = 1;
+      } else {
+        current = candidate;
+        sentenceCount += 1;
+      }
+    }
+    if (current) chunks.push(current);
+  }
+  return chunks.filter(Boolean);
 }
 
 function renderStory(story: RenderableStory): string {
