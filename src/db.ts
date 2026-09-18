@@ -7,7 +7,7 @@ export function createPool(databaseUrl: string): Pool {
 }
 
 export async function migrate(pool: Pool): Promise<void> {
-  for (const migration of ["001_initial.sql", "002_digests.sql", "003_digest_selection.sql", "004_feedback.sql"]) {
+  for (const migration of ["001_initial.sql", "002_digests.sql", "003_digest_selection.sql", "004_feedback.sql", "005_engagement.sql"]) {
     const filename = fileURLToPath(new URL(`../migrations/${migration}`, import.meta.url));
     await pool.query(await readFile(filename, "utf8"));
   }

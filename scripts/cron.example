@@ -4,6 +4,7 @@
 # Poll Miniflux and process newly discovered items hourly.
 0 * * * * cd /opt/newsweave && mkdir -p logs && /usr/bin/node dist/cli.js ingest >> logs/ingest.log 2>&1
 5 * * * * cd /opt/newsweave && mkdir -p logs && /usr/bin/node dist/cli.js process >> logs/process.log 2>&1
+0 18 * * * cd /opt/newsweave && mkdir -p logs && /usr/bin/node dist/cli.js engagement >> logs/engagement.log 2>&1
 
 # Publish the local Europe/London digest at 06:00.
 0 6 * * * cd /opt/newsweave && mkdir -p logs && /usr/bin/node dist/cli.js publish >> logs/publish.log 2>&1

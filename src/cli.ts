@@ -6,11 +6,12 @@ import { deleteExpired } from "./retention.js";
 import { processPending } from "./process.js";
 import { publish } from "./publish.js";
 import { findFanoutCandidates } from "./candidates.js";
+import { syncEngagement } from "./engagement.js";
 
 const command = process.argv[2] ?? "help";
 
 if (command === "help") {
-  console.log("newsweave ingest|fanout|process|publish|retention|doctor|metrics|candidates|downvote <item-url-or-id>");
+  console.log("newsweave ingest|fanout|process|publish|engagement|retention|doctor|metrics|candidates|downvote <item-url-or-id>");
   process.exit(0);
 }
 
@@ -43,6 +44,9 @@ try {
     console.log(JSON.stringify({ command, ...result }));
   } else if (command === "publish") {
     const result = await withAdvisoryLock(pool, "newsweave:publish", async () => publish(pool, config));
+    console.log(JSON.stringify({ command, ...result }));
+  } else if (command === "engagement") {
+    const result = await withAdvisoryLock(pool, "newsweave:engagement", async () => syncEngagement(pool, config));
     console.log(JSON.stringify({ command, ...result }));
   } else if (command === "doctor") {
     await pool.query("SELECT 1");

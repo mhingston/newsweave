@@ -18,6 +18,7 @@ installer. The verified host version is currently `1.4.467`.
 newsweave ingest       Poll Miniflux and queue new source items
 newsweave process      Fetch and summarise pending items
 newsweave publish      Curate and send the daily email
+newsweave engagement   Poll Resend for digest-level opens and clicks
 newsweave retention    Delete items older than the retention window
 newsweave doctor       Check configuration and integrations
 newsweave candidates   Report likely digest/fan-out feeds for review
@@ -68,9 +69,11 @@ per feed. Items reviewed but suppressed are recorded as excluded from that
 digest and remain available for the 7-day retention period.
 
 The ranking policy and safe adjustment points are documented in
-[`docs/curation-policy.md`](docs/curation-policy.md). Preference learning from
-email opens or clicks is intentionally deferred; Miniflux feed selection is
-the current explicit preference signal.
+[`docs/curation-policy.md`](docs/curation-policy.md). Engagement polling is
+supported without webhooks: Newsweave stores each Resend email ID and the
+`engagement` command polls Resend's Email Metrics API for digest-level opens and
+clicks. These metrics are observational for now; transactional-email metrics do
+not provide per-story link breakdowns for these sends.
 
 To exclude a specific item from future editions, use its title URL:
 

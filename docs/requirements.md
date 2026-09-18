@@ -54,7 +54,7 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 - Support a single summarisation request for transcripts up to an approximately 1 million-token context window; do not add timestamp output.
 - The first release supports any URL that the configured Fabric extractor supports.
 - Email delivery uses Resend.
-- Preference learning is deferred. Miniflux feed selection is the primary explicit preference signal; Resend opens, clicks, and non-clicks are not used for ranking in the first curation release.
+- Engagement polling is supported without webhooks. Resend email IDs and digest-level opens/clicks are stored for observation; transactional-email metrics do not provide per-story link breakdowns, and these signals do not automatically change ranking yet.
 - Explicit item downvotes are supported locally via the `downvote` command and exclude the item from future editions without rewriting sent digests.
 - Operations provide a daily run summary and failure counts.
 - Fabric CLI is maintained through the official installer; it is now v1.4.467 (released 2026-07-31).

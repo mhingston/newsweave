@@ -31,7 +31,8 @@ export async function publish(pool: Pool, config: Config, date = localDate(confi
   const email = await new Resend(config.RESEND_API_KEY).emails.send({ from: config.EMAIL_FROM, to: parseEmailRecipients(config.EMAIL_TO), subject, html });
   if (email.error) throw new Error(email.error.message);
   const selectedItemIds = new Set(selectedGroups.flatMap((group) => group.itemIds));
-  const digest = await pool.query<{ id: string }>("INSERT INTO digests (digest_date,status,subject,html,item_count,sent_at) VALUES ($1,'sent',$2,$3,$4,now()) RETURNING id", [date, subject, html, selectedGroups.length]);
+  const resendEmailId = typeof email.data?.id === "string" ? email.data.id : null;
+  const digest = await pool.query<{ id: string }>("INSERT INTO digests (digest_date,status,subject,html,item_count,sent_at,resend_email_id) VALUES ($1,'sent',$2,$3,$4,now(),$5) RETURNING id", [date, subject, html, selectedGroups.length, resendEmailId]);
   for (const item of items) await pool.query("INSERT INTO digest_items (digest_id,item_id,included) VALUES ($1,$2,$3)", [digest.rows[0]!.id, item.id, selectedItemIds.has(item.id)]);
   return { status: "sent", itemCount: selectedGroups.length, digestDate: date };
 }
