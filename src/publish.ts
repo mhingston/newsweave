@@ -5,7 +5,7 @@ import { parseEmailRecipients } from "./config.js";
 import { curate, type CuratableItem } from "./curate.js";
 import { renderDigest, type RenderableStory } from "./email.js";
 import { selectStories } from "./selection.js";
-import { isUnusableYouTubeContent } from "./extractor.js";
+import { isUnusableYouTubeContent } from "./extractor.js";\nimport { applyDecisionModel } from "./decision.js";
 
 function localDate(timezone: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
