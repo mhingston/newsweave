@@ -51,7 +51,7 @@ try {
   } else if (command === "doctor") {
     await pool.query("SELECT 1");
     const state = await pool.query("SELECT last_entry_id FROM ingestion_state WHERE id=TRUE");
-    console.log(JSON.stringify({ command, database: "ok", miniflux: config.MINIFLUX_URL, cursor: state.rows[0]?.last_entry_id ?? 0 }));
+    console.log(JSON.stringify({ command, database: "ok", miniflux: config.MINIFLUX_URL, cursor: state.rows[0]?.last_entry_id ?? 0, decisionModel: config.DECISION_MODEL_ENABLED ? (process.env.JEV_PROVIDER ?? "typesafe") : "disabled" }));
   } else if (command === "candidates") {
     console.log(JSON.stringify(await findFanoutCandidates(pool), null, 2));
   } else if (command === "metrics") {
