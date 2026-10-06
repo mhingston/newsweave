@@ -6,6 +6,7 @@ import { curate, type CuratableItem } from "./curate.js";
 import { renderDigest, type RenderableStory } from "./email.js";
 import { selectStories } from "./selection.js";
 import { isUnusableYouTubeContent } from "./extractor.js";
+import { applyDecisionModel } from "./decision.js";
 
 function localDate(timezone: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -22,7 +23,8 @@ export async function publish(pool: Pool, config: Config, date = localDate(confi
     await pool.query("INSERT INTO digests (digest_date,status,item_count) VALUES ($1,'no_digest',0)", [date]);
     return { status: "no_digest", itemCount: 0, digestDate: date };
   }
-  const groups = await curate(config, items);
+  let groups = await curate(config, items);
+  groups = await applyDecisionModel(config, groups, items);
   const selectedGroups = selectStories(groups, items);
   const itemById = new Map(items.map((item) => [item.id, item]));
   const stories: RenderableStory[] = selectedGroups.map((group) => ({ ...group, items: group.itemIds.map((id) => itemById.get(id)!).filter(Boolean), kind: group.itemIds.some((id) => itemById.get(id)?.kind === "fanout") ? "fanout" : "rss" }));

@@ -69,8 +69,30 @@ per feed. Items reviewed but suppressed are recorded as excluded from that
 digest and remain available for the 7-day retention period.
 
 The ranking policy and safe adjustment points are documented in
-[`docs/curation-policy.md`](docs/curation-policy.md). Engagement polling is
-supported without webhooks: Newsweave stores each Resend email ID and the
+[`docs/curation-policy.md`](docs/curation-policy.md).
+
+An optional typed decision layer can be enabled with
+`DECISION_MODEL_ENABLED=true`. It uses
+[`@mhingston5/jev-cli`](https://github.com/mhingston/jev-cli), so provider
+selection remains independent of Newsweave: TypeSafe, OpenRouter, Vercel,
+Cloudflare, or any compatible `/v1/systemone` service can be selected through
+the normal `JEV_*` / provider credential environment variables.
+
+When enabled, the decision layer re-ranks the text model's story groups using
+explicit editorial judgments and, by default, performs a final semantic
+same-event check. If two groups from different sources are judged to describe
+the same specific event above `DECISION_MODEL_DUPLICATE_THRESHOLD`, the lower
+ranked group is merged into the higher ranked group so its source links are
+preserved rather than emitted as a duplicate story. The semantic dedupe guard
+only compares groups with distinct source provenance; same-publisher follow-up
+coverage is left separate.
+
+Decision calls fail open: ranking keeps the existing score and dedupe keeps
+groups separate when the decision service is unavailable. A run-level budget
+(default 60 seconds) and a circuit breaker after two consecutive failures stop
+provider outages from multiplying per-call timeouts across the whole edition.
+
+Engagement polling is supported without webhooks: Newsweave stores each Resend email ID and the
 `engagement` command polls Resend's Email Metrics API for digest-level opens and
 clicks. These metrics are observational for now; transactional-email metrics do
 not provide per-story link breakdowns for these sends.

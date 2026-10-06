@@ -37,7 +37,9 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 - PostgreSQL is used for persistence and simple full-text search.
 - Fetched content, summaries, source metadata, and parent/child provenance are retained for auditability.
 - Entire items are deleted after 7 days; retention cleanup is mandatory and scheduled.
-- The AI integration should be deliberately simple: one configured provider/model, one summarisation request per item, structured output, bounded retries, and an explicit failed state. Optional fallback providers remain an open design question.
+- The generative AI integration remains deliberately simple: one configured text provider/model, one summarisation request per item, structured output, bounded retries, and an explicit failed state.
+- An optional publication-time decision layer may be enabled independently. It uses `@mhingston5/jev-cli` so ranking and same-event judgments can run against any supported or System One-compatible provider without coupling Newsweave to a specific decision model.
+- Decision-model failures are fail-open: existing text-model scores remain usable and failed duplicate checks keep stories separate rather than suppressing them.
 - Fan-out accepts HTTP/HTTPS article links while filtering obvious navigation, unsubscribe, social-profile, media-download, and tracking links.
 - Child items inherit the parent's feed/category metadata while also recording the child's actual publisher/domain.
 - Email ordering is top stories first, ordinary coverage second, and fan-out discoveries third.
@@ -69,7 +71,7 @@ Create a small, reliable system that reads all Miniflux feeds, expands digest-st
 
 - No embeddings or vector search.
 - No per-chunk enrichment pipeline.
-- No entity, topic, or quality-classification jobs.
+- No standalone entity/topic enrichment jobs or continuously running classification pipeline; optional typed curation decisions run only during publication.
 - No NotebookLM or podcast generation.
 - No web UI in the first release.
 - No multi-edition publication workflow.

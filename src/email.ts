@@ -39,7 +39,7 @@ function summaryParagraphs(value: string): string[] {
 function renderStory(story: RenderableStory): string {
   const points = story.keyPoints.map((point) => `<li>${escapeHtml(point)}</li>`).join("");
   const titleUrl = story.items[0]?.url;
-  const sourceItems = story.kind === "fanout" && titleUrl
+  const sourceItems = titleUrl
     ? story.items.filter((item) => {
       try { return normalizeUrl(item.url) !== normalizeUrl(titleUrl); } catch { return item.url !== titleUrl; }
     })

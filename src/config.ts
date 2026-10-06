@@ -1,6 +1,14 @@
 import "dotenv/config";
 import { z } from "zod";
 
+const booleanFlag = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return value;
+}, z.boolean());
+
 const schema = z.object({
   DATABASE_URL: z.string().startsWith("postgres"),
   MINIFLUX_URL: z.string().url(),
@@ -23,6 +31,14 @@ const schema = z.object({
   FANOUT_CANDIDATE_FEED_TITLES: z.string().optional(),
   FANOUT_MIN_LINKS: z.coerce.number().int().positive().default(5),
   FANOUT_MIN_DOMAINS: z.coerce.number().int().positive().default(3),
+  DECISION_MODEL_ENABLED: booleanFlag.default(false),
+  DECISION_MODEL_DEDUPE_ENABLED: booleanFlag.default(true),
+  DECISION_MODEL_DUPLICATE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.85),
+  DECISION_MODEL_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+  DECISION_MODEL_RUN_BUDGET_MS: z.coerce.number().int().positive().default(60_000),
+  DECISION_EDITORIAL_POLICY: z.string().min(1).default(
+    "Prioritize substantive, novel, consequential information with concrete mechanisms, evidence, implementation detail, or decisions the reader can act on. Deprioritize promotional, repetitive, thin, or purely speculative coverage.",
+  ),
 });
 
 export type Config = z.infer<typeof schema>;
