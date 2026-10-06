@@ -64,7 +64,7 @@ function storyTokens(group: StoryGroup, items: Map<string, CuratableItem>): Set<
   const memberTitles = group.itemIds
     .map((id) => items.get(id)?.title ?? "")
     .join(" ");
-  const text = `${group.headline} ${memberTitles}`.toLowerCase();
+  const text = `${group.headline} ${group.summary} ${memberTitles}`.toLowerCase();
   return new Set(
     (text.match(/[a-z0-9][a-z0-9.+#-]*/g) ?? [])
       .filter((token) => token.length >= 3 && !STOP_WORDS.has(token)),
