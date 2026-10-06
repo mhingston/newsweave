@@ -53,16 +53,34 @@ class CircuitBreakingClient implements SystemOneLikeClient {
       throw new DecisionCircuitOpenError("decision run budget exhausted or circuit is open");
     }
 
+    const remainingMs = Math.max(1, this.deadline - Date.now());
+    let budgetTimer: ReturnType<typeof setTimeout> | undefined;
+    const budgetExceeded = new Promise<never>((_, reject) => {
+      budgetTimer = setTimeout(() => {
+        this.open = true;
+        reject(new DecisionCircuitOpenError("decision run budget exhausted"));
+      }, remainingMs);
+    });
+
     try {
-      const response = await this.client.systemOne(request);
+      const response = await Promise.race([
+        this.client.systemOne(request),
+        budgetExceeded,
+      ]);
       this.consecutiveFailures = 0;
       return response;
     } catch (error) {
       this.consecutiveFailures++;
-      if (this.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD || Date.now() >= this.deadline) {
+      if (
+        error instanceof DecisionCircuitOpenError
+        || this.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD
+        || Date.now() >= this.deadline
+      ) {
         this.open = true;
       }
       throw error;
+    } finally {
+      if (budgetTimer) clearTimeout(budgetTimer);
     }
   }
 }
