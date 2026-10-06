@@ -34,7 +34,7 @@ const schema = z.object({
   DECISION_MODEL_ENABLED: booleanFlag.default(false),
   DECISION_MODEL_DEDUPE_ENABLED: booleanFlag.default(true),
   DECISION_MODEL_DUPLICATE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.85),
-  DECISION_MODEL_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
+  DECISION_MODEL_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),\n  DECISION_MODEL_RUN_BUDGET_MS: z.coerce.number().int().positive().default(60_000),
   DECISION_EDITORIAL_POLICY: z.string().min(1).default(
     "Prioritize substantive, novel, consequential information with concrete mechanisms, evidence, implementation detail, or decisions the reader can act on. Deprioritize promotional, repetitive, thin, or purely speculative coverage.",
   ),
