@@ -39,14 +39,19 @@ A promotional-probability judgment applies a bounded penalty. The default
 editorial policy can be overridden through `DECISION_EDITORIAL_POLICY`.
 
 Semantic dedupe is deliberately a second line of defence after deterministic
-URL/source dedupe and the text model's grouping. A cheap lexical prefilter
-avoids all-pairs decision calls. Plausible matches are sent to one typed
+URL/source dedupe and the text model's grouping. Only groups with distinct
+publisher-host provenance (falling back to feed identity when a host cannot be
+parsed) are eligible, so same-source follow-up coverage is not collapsed. A
+cheap lexical prefilter avoids all-pairs decision calls. Plausible matches are
+sent to one typed
 `noul` question asking whether they cover the same *specific* event,
 announcement, release, incident, or development. A positive match merges item
 IDs into the higher-ranked group, retaining all source links.
 
 Both ranking and dedupe fail open. A provider failure must not suppress a story
-or prevent publication.
+or prevent publication. Decision work is bounded by
+`DECISION_MODEL_RUN_BUDGET_MS` (60 seconds by default), and two consecutive
+decision failures open a circuit for the remainder of the publication run.
 
 ## Safe adjustment points
 
