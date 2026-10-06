@@ -83,9 +83,14 @@ explicit editorial judgments and, by default, performs a final semantic
 same-event check. If two groups from different sources are judged to describe
 the same specific event above `DECISION_MODEL_DUPLICATE_THRESHOLD`, the lower
 ranked group is merged into the higher ranked group so its source links are
-preserved rather than emitted as a duplicate story. Decision calls fail open:
-ranking keeps the existing score and dedupe keeps groups separate when the
-decision service is unavailable.
+preserved rather than emitted as a duplicate story. The semantic dedupe guard
+only compares groups with distinct source provenance; same-publisher follow-up
+coverage is left separate.
+
+Decision calls fail open: ranking keeps the existing score and dedupe keeps
+groups separate when the decision service is unavailable. A run-level budget
+(default 60 seconds) and a circuit breaker after two consecutive failures stop
+provider outages from multiplying per-call timeouts across the whole edition.
 
 Engagement polling is supported without webhooks: Newsweave stores each Resend email ID and the
 `engagement` command polls Resend's Email Metrics API for digest-level opens and
