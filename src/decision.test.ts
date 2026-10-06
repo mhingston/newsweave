@@ -29,7 +29,7 @@ const item = (id: string, title: string, feedId = "feed"): CuratableItem => ({
   feedId,
   feedTitle: feedId,
   title,
-  url: `https://example.com/${id}`,
+  url: `https://${feedId}.example.com/${id}`,
   kind: "rss",
   summary: { summary: title, keyPoints: ["one", "two", "three"], relevance: 0.5, novelty: 0.5 },
 });
@@ -115,6 +115,26 @@ describe("decision model curation", () => {
     expect(client.calls).toHaveLength(1);
   });
 
+  it("does not semantically merge follow-up coverage from the same source", async () => {
+    const items = [
+      item("a", "OpenAI launches GPT-6 reasoning model", "feed-a"),
+      item("b", "GPT-6 reasoning model launch reaches developers", "feed-a"),
+    ];
+    const groups = [
+      group("a", "OpenAI launches GPT-6 reasoning model", 0.9),
+      group("b", "GPT-6 reasoning model launch reaches developers", 0.8),
+    ];
+    const client = new FakeClient(() => ({
+      model: "fixture",
+      answers: { sameStory: { type: "noul", noul: 0.99 } },
+    }));
+
+    const deduped = await dedupeWithDecisionModel(config(), groups, items, client);
+
+    expect(deduped).toHaveLength(2);
+    expect(client.calls).toHaveLength(0);
+  });
+
   it("keeps plausible matches separate below the configured duplicate threshold", async () => {
     const items = [
       item("a", "OpenAI launches GPT-6 reasoning model", "feed-a"),
@@ -132,6 +152,22 @@ describe("decision model curation", () => {
     const deduped = await dedupeWithDecisionModel(config({ DECISION_MODEL_DUPLICATE_THRESHOLD: "0.85" }), groups, items, client);
 
     expect(deduped).toHaveLength(2);
+  });
+
+  it("opens the run circuit after repeated provider failures", async () => {
+    const items = [
+      item("a", "Story A", "feed-a"),
+      item("b", "Story B", "feed-b"),
+      item("c", "Story C", "feed-c"),
+      item("d", "Story D", "feed-d"),
+    ];
+    const groups = items.map((value) => group(value.id, value.title));
+    const client = new FakeClient(() => { throw new Error("provider unavailable"); });
+
+    const result = await applyDecisionModel(config(), groups, items, client);
+
+    expect(result).toHaveLength(4);
+    expect(client.calls).toHaveLength(2);
   });
 
   it("does nothing when the decision layer is disabled", async () => {
