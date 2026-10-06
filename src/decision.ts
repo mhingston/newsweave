@@ -4,6 +4,8 @@ import {
   score,
   type JevAnswer,
   type SystemOneLikeClient,
+  type SystemOneRequest,
+  type SystemOneResponse,
 } from "@mhingston5/jev-cli";
 import type { Config } from "./config.js";
 import type { CuratableItem, StoryGroup } from "./curate.js";
@@ -19,6 +21,51 @@ const STOP_WORDS = new Set([
   "about", "after", "again", "against", "also", "been", "being", "from", "have",
   "into", "more", "most", "new", "news", "over", "that", "their", "this", "with",
 ]);
+
+const CIRCUIT_FAILURE_THRESHOLD = 2;
+
+class DecisionCircuitOpenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DecisionCircuitOpenError";
+  }
+}
+
+class CircuitBreakingClient implements SystemOneLikeClient {
+  private consecutiveFailures = 0;
+  private open = false;
+  private readonly deadline: number;
+
+  constructor(
+    private readonly client: SystemOneLikeClient,
+    budgetMs: number,
+  ) {
+    this.deadline = Date.now() + budgetMs;
+  }
+
+  get isOpen(): boolean {
+    return this.open || Date.now() >= this.deadline;
+  }
+
+  async systemOne(request: SystemOneRequest): Promise<SystemOneResponse> {
+    if (this.isOpen) {
+      this.open = true;
+      throw new DecisionCircuitOpenError("decision run budget exhausted or circuit is open");
+    }
+
+    try {
+      const response = await this.client.systemOne(request);
+      this.consecutiveFailures = 0;
+      return response;
+    } catch (error) {
+      this.consecutiveFailures++;
+      if (this.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD || Date.now() >= this.deadline) {
+        this.open = true;
+      }
+      throw error;
+    }
+  }
+}
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(1, value));
@@ -71,11 +118,54 @@ function storyTokens(group: StoryGroup, items: Map<string, CuratableItem>): Set<
   );
 }
 
+function sourceHosts(group: StoryGroup, items: Map<string, CuratableItem>): Set<string> {
+  const hosts = new Set<string>();
+  for (const id of group.itemIds) {
+    const item = items.get(id);
+    if (!item) continue;
+    try {
+      hosts.add(new URL(item.url).hostname.toLowerCase().replace(/^www\./, ""));
+    } catch {
+      // Feed identity below remains available as a fallback for malformed URLs.
+    }
+  }
+  return hosts;
+}
+
+function sourceFeeds(group: StoryGroup, items: Map<string, CuratableItem>): Set<string> {
+  return new Set(
+    group.itemIds
+      .map((id) => items.get(id)?.feedId)
+      .filter((feedId): feedId is string => Boolean(feedId)),
+  );
+}
+
+function hasDistinctSourceProvenance(
+  left: StoryGroup,
+  right: StoryGroup,
+  items: Map<string, CuratableItem>,
+): boolean {
+  const leftHosts = sourceHosts(left, items);
+  const rightHosts = sourceHosts(right, items);
+
+  if (leftHosts.size > 0 && rightHosts.size > 0) {
+    return ![...leftHosts].some((host) => rightHosts.has(host));
+  }
+
+  const leftFeeds = sourceFeeds(left, items);
+  const rightFeeds = sourceFeeds(right, items);
+  return leftFeeds.size > 0
+    && rightFeeds.size > 0
+    && ![...leftFeeds].some((feedId) => rightFeeds.has(feedId));
+}
+
 function plausibleDuplicate(
   left: StoryGroup,
   right: StoryGroup,
   items: Map<string, CuratableItem>,
 ): boolean {
+  if (!hasDistinctSourceProvenance(left, right, items)) return false;
+
   const leftTokens = storyTokens(left, items);
   const rightTokens = storyTokens(right, items);
   const smaller = leftTokens.size <= rightTokens.size ? leftTokens : rightTokens;
@@ -95,6 +185,10 @@ function mergeGroups(primary: StoryGroup, duplicate: StoryGroup): StoryGroup {
   };
 }
 
+function circuitIsOpen(client: SystemOneLikeClient): boolean {
+  return client instanceof CircuitBreakingClient && client.isOpen;
+}
+
 export function createDecisionClient(config: Config): SystemOneLikeClient {
   return createJevClient({ timeoutMs: config.DECISION_MODEL_TIMEOUT_MS });
 }
@@ -108,7 +202,8 @@ export async function rankWithDecisionModel(
   const itemsById = itemMap(items);
   const ranked: StoryGroup[] = [];
 
-  for (const group of groups) {
+  for (let index = 0; index < groups.length; index++) {
+    const group = groups[index]!;
     try {
       const response = await client.systemOne({
         state: {
@@ -155,6 +250,10 @@ export async function rankWithDecisionModel(
     } catch (error) {
       console.warn(`Decision ranking failed for "${group.headline}": ${errorMessage(error)}`);
       ranked.push(group);
+      if (circuitIsOpen(client)) {
+        ranked.push(...groups.slice(index + 1));
+        break;
+      }
     }
   }
 
@@ -172,7 +271,8 @@ export async function dedupeWithDecisionModel(
   const itemsById = itemMap(items);
   const accepted: StoryGroup[] = [];
 
-  for (const candidate of groups) {
+  for (let candidateIndex = 0; candidateIndex < groups.length; candidateIndex++) {
+    const candidate = groups[candidateIndex]!;
     let duplicateIndex = -1;
 
     for (let index = 0; index < accepted.length; index++) {
@@ -200,6 +300,9 @@ export async function dedupeWithDecisionModel(
         console.warn(
           `Decision duplicate check failed for "${existing.headline}" vs "${candidate.headline}": ${errorMessage(error)}`,
         );
+        if (circuitIsOpen(client)) {
+          return [...accepted, candidate, ...groups.slice(candidateIndex + 1)];
+        }
       }
     }
 
@@ -221,14 +324,16 @@ export async function applyDecisionModel(
 ): Promise<StoryGroup[]> {
   if (!config.DECISION_MODEL_ENABLED || groups.length === 0) return groups;
 
-  let decisionClient: SystemOneLikeClient;
+  let rawClient: SystemOneLikeClient;
   try {
-    decisionClient = client ?? createDecisionClient(config);
+    rawClient = client ?? createDecisionClient(config);
   } catch (error) {
     console.warn(`Decision model disabled for this run: ${errorMessage(error)}`);
     return groups;
   }
 
+  const decisionClient = new CircuitBreakingClient(rawClient, config.DECISION_MODEL_RUN_BUDGET_MS);
   const ranked = await rankWithDecisionModel(config, groups, items, decisionClient);
+  if (decisionClient.isOpen) return ranked;
   return dedupeWithDecisionModel(config, ranked, items, decisionClient);
 }
