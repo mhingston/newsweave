@@ -12,9 +12,17 @@ const story = (kind: "rss" | "fanout"): RenderableStory => ({
 });
 
 describe("renderDigest", () => {
-  it("omits appended sources for ordinary RSS stories", () => {
+  it("omits appended sources for single-source RSS stories", () => {
     const html = renderDigest("2026-08-02", [story("rss")]);
     expect(html).not.toContain("<strong>Sources</strong>");
+  });
+
+  it("shows supporting sources for merged RSS coverage", () => {
+    const value = story("rss");
+    value.items.push({ ...value.items[0]!, id: "2", feedId: "feed-2", title: "Another source", url: "https://another.example/story" });
+    const html = renderDigest("2026-08-02", [value]);
+    expect(html).toContain("<strong>Sources</strong>");
+    expect(html).toContain("Another source");
   });
 
   it("keeps appended sources for fan-out stories", () => {
